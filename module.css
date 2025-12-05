@@ -63,7 +63,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #FF0000;
+  border-color: #DE0B19;
   box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
 }
 
@@ -81,7 +81,7 @@
   font-size: 18px;
   font-weight: 600;
   color: #FFFFFF;
-  background: #FF0000;
+  background: #DE0B19;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -133,7 +133,7 @@
 
 .result-card.situation-apres {
   background: linear-gradient(135deg, #FFF5F5 0%, #FFFFFF 100%);
-  border-color: #FF0000;
+  border-color: #DE0B19;
 }
 
 .result-card h4 {
@@ -147,7 +147,6 @@
 
 .metric {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid #E8E8E8;
@@ -162,34 +161,37 @@
 }
 
 .metric-label {
+  flex: 0 0 40%;
+  width: 50%; 
   font-size: 14px;
-  color: #666666;
+  color: #666;
 }
 
 .metric-value {
+  margin-left: auto;
   font-size: 18px;
   font-weight: 600;
   color: #1A1A1A;
 }
 
 .metric-value.positive {
-  color: #FF0000;
+  color: #DE0B19;
 }
 
 .metric-badge {
   display: inline-block;
-  background: #FF0000;
+  background: #DE0B19;
   color: #FFFFFF;
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 12px;
-  margin-left: 8px;
+  margin: 0; 
 }
 
 .gain-mensuel {
   text-align: center;
-  background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
+  background: linear-gradient(135deg, #DE0B19 0%, #CC0000 100%);
   color: #FFFFFF;
   padding: 32px;
   border-radius: 12px;
@@ -245,7 +247,7 @@
 }
 
 .roi-card:hover {
-  border-color: #FF0000;
+  border-color: #DE0B19;
   transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -261,7 +263,7 @@
   display: block;
   font-size: 24px;
   font-weight: 700;
-  color: #FF0000;
+  color: #DE0B19;
 }
 
 .benefice-annuel {
@@ -269,7 +271,7 @@
   padding: 20px;
   background: #FFFFFF;
   border-radius: 8px;
-  border: 2px solid #FF0000;
+  border: 2px solid #DE0B19;
 }
 
 .benefice-label {
@@ -283,7 +285,7 @@
   display: block;
   font-size: 32px;
   font-weight: 700;
-  color: #FF0000;
+  color: #DE0B19;
 }
 
 .benefits-section {
@@ -313,36 +315,6 @@
   padding: 8px 0;
 }
 
-.cta-section {
-  text-align: center;
-  padding: 32px;
-  background: linear-gradient(135deg, #1A1A1A 0%, #333333 100%);
-  border-radius: 12px;
-}
-
-.cta-text {
-  font-size: 18px;
-  color: #FFFFFF;
-  margin: 0 0 20px 0;
-}
-
-.btn-cta {
-  display: inline-block;
-  padding: 16px 40px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #FFFFFF;
-  background: #FF0000;
-  border-radius: 6px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.btn-cta:hover {
-  background: #CC0000;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4);
-}
 
 @media (max-width: 768px) {
   .akairo-calculator-wrapper { padding: 24px; margin: 20px; }
@@ -350,4 +322,58 @@
   .roi-grid { grid-template-columns: repeat(2, 1fr); }
   .benefits-list { grid-template-columns: 1fr; }
   .gain-value { font-size: 36px; }
+}
+/* === SECTION COÛT DE L'INACTION (Version Texte Seul) === */
+.inaction-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  
+  background: #FFFFFF; 
+  border: 1px solid #DE0B19;
+  
+  /* On augmente un peu le padding vertical pour compenser l'absence d'icône */
+  padding: 24px 30px; 
+  border-radius: 8px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  animation: fadeIn 1s ease;
+}
+
+/* Plus besoin de la classe .inaction-icon */
+
+.inaction-text {
+  width: 100%;
+}
+
+.inaction-text h4 {
+  margin: 0 0 8px 0; /* Un peu plus d'espace sous le titre */
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px; /* Espacement des lettres un peu plus large pour le style */
+  color: #1A1A1A; /* Noir (ou gris foncé #333) pour faire plus classe */
+  font-weight: 700;
+}
+
+.inaction-text p {
+  margin: 0;
+  font-size: 16px;
+  color: #1A1A1A;
+  line-height: 1.5;
+}
+
+.inaction-amount {
+  color: #DE0B19;
+  font-weight: 700;
+}
+
+/* Adaptation Mobile */
+@media (max-width: 768px) {
+  .inaction-section {
+    padding: 20px;
+  }
 }
