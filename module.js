@@ -37,6 +37,7 @@ function calculerROI() {
   const caApres = ventesApres * panierApres;
   
   const gainMensuel = caApres - caAvant;
+  const gainAnnuel = gainMensuel * 12;
   const gainPourcent = ((caApres - caAvant) / caAvant) * 100;
   const beneficeMensuelNet = gainMensuel - coutsMensuels;
 
@@ -71,8 +72,10 @@ function calculerROI() {
   document.getElementById('ca_apres').textContent = formatEuro(caApres);
 
   document.getElementById('gain_mensuel').textContent = formatEuro(gainMensuel);
-  document.getElementById('gain_percent').textContent = '+' + gainPourcent.toFixed(1) + '% de CA';
-
+  const elGainAnnuel = document.getElementById('gain_annuel');
+    if (elGainAnnuel) {
+      elGainAnnuel.textContent = formatEuro(gainAnnuel);
+    }
   document.getElementById('point_mort').textContent = pointMort > 0 ? 
     Math.ceil(pointMort) + ' mois' : 'Immédiat';
   
