@@ -1,4 +1,6 @@
-// Attendre que le DOM soit chargé
+// Variable globale pour le graphique Chart.js
+let roiChartInstance = null;
+
 document.addEventListener('DOMContentLoaded', function() {
   const btnCalculate = document.querySelector('.btn-calculate');
   if (btnCalculate) {
@@ -6,179 +8,234 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Fonction principale de calcul ROI
-function calculerROI() {
-  console.log('Fonction calculerROI appelée');
-
-  // 1. Récupération des valeurs
-  const trafic = parseFloat(document.getElementById('trafic').value) || 0;
-  const ventes = parseFloat(document.getElementById('ventes').value) || 0;
-  const panier = parseFloat(document.getElementById('panier').value) || 0;
-  const investissement = parseFloat(document.getElementById('investissement').value) || 0;
-  const coutsMensuels = parseFloat(document.getElementById('couts_mensuels').value) || 0;
-
-  if (trafic <= 0 || ventes <= 0 || panier <= 0) {
-    alert('Veuillez renseigner tous les champs avec des valeurs positives.');
-    return;
-  }
-
-  // === 2. LOGIQUE DE CALCUL ===
+// === GESTION DU MODE ACHAT / LOCATION RSE ===
+function toggleFinancement() {
+  const isLocation = document.getElementById('mode_location').checked;
+  const groupLoyer = document.getElementById('group_loyer');
   
-  // Situation AVANT
-  const tauxConversion = ventes / trafic;
-  const caAvant = ventes * panier;
-
-  // Situation APRÈS (+33% trafic, +29.5% panier)
-  const traficApres = trafic * 1.33; 
-  const ventesApres = traficApres * tauxConversion;
-  const panierApres = panier * 1.295; 
-  const caApres = ventesApres * panierApres;
+  // Le bloc de résultat à afficher/masquer
+  const blocTreso = document.getElementById('bloc_tresorerie');
   
-  // Gains et Trésorerie
-  const gainMensuel = caApres - caAvant;
-  const gainAnnuelCA = gainMensuel * 12; // CORRECTION DU NOM DE VARIABLE
-  const coutInaction = gainMensuel * 6;
+  // Éléments UI à modifier
+  const labelInvest = document.getElementById('label_invest');
+  const helperInvest = document.getElementById('helper_invest');
+  const inputInvest = document.getElementById('investissement');
   
-  // Trésorerie Nette (Gain - Coûts récurrents)
-  const tresorerieNetteMensuelle = gainMensuel - coutsMensuels;
-  
-  // Bénéfice Net Année 1 (pour le ROI)
-  const coutsAnnuels = coutsMensuels * 12;
-  const beneficeNetAn1 = gainAnnuelCA - coutsAnnuels - investissement;
+  const labelCouts = document.getElementById('label_couts');
+  const helperCouts = document.getElementById('helper_couts');
 
-  // Calcul du ROI Année 1 (%)
-  let roiAn1 = 0;
-  if (investissement > 0) {
-    roiAn1 = (beneficeNetAn1 / investissement) * 100;
-  }
-
-  // Calcul du Point Mort (Amortissement)
-  // On réintègre ce calcul car le script l'utilise plus bas
-  let pointMort = 0;
-  if (tresorerieNetteMensuelle > 0) {
-    pointMort = investissement / tresorerieNetteMensuelle;
-  }
-
-  // Calculs ROI sur 3 ans (nécessaires si vous avez gardé les champs cachés)
-  const calculROI = (mois) => {
-    const gainNetCumule = (tresorerieNetteMensuelle * mois) - investissement;
-    return (gainNetCumule / investissement) * 100;
-  };
-  const roi12 = calculROI(12); // = roiAn1
-  const roi24 = calculROI(24);
-  const roi36 = calculROI(36);
-
-
-  // === 3. AFFICHAGE DES RÉSULTATS ===
-  
-  // -- A. Les 4 Cartes Financières (Nouvelle version Sales) --
-  
-  // Carte 1 : Investissement
-  const elInvest = document.getElementById('res_invest');
-  if(elInvest) elInvest.textContent = formatEuro(investissement);
-  
-  // Carte 2 : CA Annuel
-  const elCa1An = document.getElementById('res_ca_1an');
-  if(elCa1An) elCa1An.textContent = formatEuro(gainAnnuelCA);
-  
-  // Carte 3 : Bénéfice Net
-  const elBenefice = document.getElementById('res_benefice');
-  if (elBenefice) {
-    const signe = beneficeNetAn1 > 0 ? '+' : '';
-    elBenefice.textContent = signe + formatEuro(beneficeNetAn1);
-    elBenefice.style.color = beneficeNetAn1 >= 0 ? '#DE0B19' : '#1A1A1A'; 
-  }
-  
-  // Carte 4 : ROI
-  const elROI = document.getElementById('res_roi');
-  if (elROI) {
-    elROI.textContent = formatPourcent(roiAn1);
-    elROI.style.color = roiAn1 >= 0 ? '#DE0B19' : '#1A1A1A';
-  }
-
-  // -- B. Le Tableau Comparatif (Avant / Après) --
-  document.getElementById('trafic_avant').textContent = formatNumber(trafic) + ' visit.';
-  document.getElementById('ventes_avant').textContent = formatNumber(ventes) + ' ventes';
-  document.getElementById('panier_avant').textContent = formatEuro(panier);
-  document.getElementById('ca_avant').textContent = formatEuro(caAvant);
-
-  document.getElementById('trafic_apres').textContent = formatNumber(Math.round(traficApres)) + ' visit.';
-  document.getElementById('ventes_apres').textContent = formatNumber(Math.round(ventesApres)) + ' ventes';
-  document.getElementById('panier_apres').textContent = formatEuro(panierApres);
-  document.getElementById('ca_apres').textContent = formatEuro(caApres);
-
-  // -- C. Les Bannières et Alertes --
-  document.getElementById('gain_mensuel').textContent = formatEuro(gainMensuel);
-  
-  const elGainAnnuel = document.getElementById('gain_annuel');
-  if (elGainAnnuel) elGainAnnuel.textContent = formatEuro(gainAnnuelCA);
+  if (isLocation) {
+    // === MODE LOCATION RSE ===
     
-  const elCoutInaction = document.getElementById('cout_inaction');
-  if (elCoutInaction) elCoutInaction.textContent = formatEuro(coutInaction);
+    // 1. Afficher le champ Loyer
+    groupLoyer.style.display = 'block'; 
+    
+    // 2. Afficher le bloc Résultat Trésorerie (L'argument clé)
+    if (blocTreso) blocTreso.style.display = 'block';
 
-  // -- D. Gestion de la Trésorerie Nette (si présente) --
-  const elTreso = document.getElementById('tresorerie_nette');
-  if (elTreso) {
-      const signe = tresorerieNetteMensuelle > 0 ? '+' : '';
-      elTreso.textContent = signe + formatEuro(tresorerieNetteMensuelle) + ' /mois';
-      elTreso.style.color = tresorerieNetteMensuelle >= 0 ? '#00BDA5' : '#DE0B19'; // Vert ou Rouge
-  }
+    // 3. Adapter les libellés
+    labelInvest.textContent = "Apport Initial (Facultatif)";
+    helperInvest.textContent = "Préservation de la trésorerie (généralement 0€)";
+    if (inputInvest.value == "3500") inputInvest.value = "0"; 
 
-  // -- E. Anciens champs (Point mort, ROI 24/36) --
-  // On met des sécurités (if) au cas où vous les auriez supprimés du HTML
-  const elPointMort = document.getElementById('point_mort');
-  if(elPointMort) elPointMort.textContent = pointMort > 0 ? Math.ceil(pointMort) + ' mois' : 'Immédiat';
-  
-  const elRoi12 = document.getElementById('roi_12');
-  if(elRoi12) elRoi12.textContent = formatPourcent(roi12);
+    labelCouts.textContent = "Services hors-leasing (€)";
+    helperCouts.textContent = "Ex: Licence logicielle si non incluse dans le loyer";
+    
+  } else {
+    // === MODE ACHAT COMPTANT ===
+    
+    // 1. Cacher le champ Loyer
+    groupLoyer.style.display = 'none'; 
+    
+    // 2. Masquer le bloc Résultat Trésorerie (Moins pertinent en achat)
+    if (blocTreso) blocTreso.style.display = 'none';
 
-  const elRoi24 = document.getElementById('roi_24');
-  if(elRoi24) elRoi24.textContent = formatPourcent(roi24);
+    // 3. Adapter les libellés
+    labelInvest.textContent = "Investissement initial (€)";
+    helperInvest.textContent = "Matériel + Installation + Logiciel";
+    if (inputInvest.value == "0") inputInvest.value = "3500";
 
-  const elRoi36 = document.getElementById('roi_36');
-  if(elRoi36) elRoi36.textContent = formatPourcent(roi36);
-
-
-  // === 4. AFFICHAGE FINAL & TRACKING ===
-  
-  const resultsSection = document.getElementById('results');
-  resultsSection.style.display = 'block';
-  
-  setTimeout(function() {
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 100);
-
-  // Tracking HubSpot
-  if (typeof window._hsq !== 'undefined') {
-    window._hsq.push(['trackCustomBehavioralEvent', {
-      name: 'calculateur_roi_utilise',
-      properties: {
-        trafic: trafic,
-        gain_mensuel: gainMensuel,
-        roi_12mois: roiAn1
-      }
-    }]);
-  }
-
-  // Transfert Formulaire
-  const donneesATransferer = {
-    'trafic_visiteurs_mensuel': trafic,
-    'gain_mensuel_estime': Math.round(gainMensuel),
-    'roi_previsionnel_12_mois': Math.round(roiAn1),
-    'budget_investissement_estime': investissement
-  };
-
-  for (const [nomInterne, valeur] of Object.entries(donneesATransferer)) {
-    const champ = document.querySelector(`input[name="${nomInterne}"]`);
-    if (champ) {
-      champ.value = valeur;
-      champ.dispatchEvent(new Event('input', { bubbles: true }));
-      champ.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+    labelCouts.textContent = "Coûts mensuels récurrents (€)";
+    helperCouts.textContent = "Abonnement IDPLAY + Maintenance";
   }
 }
 
-// Fonctions utilitaires
-function formatEuro(value) { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value); }
-function formatNumber(value) { return new Intl.NumberFormat('fr-FR').format(value); }
-function formatPourcent(value) { return (value >= 0 ? '+' : '') + value.toFixed(0) + '%'; }
+// === CALCUL PRINCIPAL ===
+function calculerROI() {
+  console.log('--- Calcul en cours ---');
+
+  // Helpers sécurisés
+  const getVal = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+  
+  // 1. Inputs
+  const trafic = getVal('trafic');
+  const ventes = getVal('ventes');
+  const panier = getVal('panier');
+  
+  // Gestion intelligente de la simulation (Défaut 33%)
+  let tauxHausseInput = 33;
+  const elTaux = document.getElementById('taux_hausse_trafic');
+  if (elTaux) tauxHausseInput = parseFloat(elTaux.value) || 33;
+
+  // Gestion intelligente du Financement
+  let investissement = getVal('investissement');
+  let coutsMensuels = getVal('couts_mensuels');
+  
+  const isLocation = document.getElementById('mode_location')?.checked;
+  if (isLocation) {
+    const loyer = getVal('loyer_mensuel');
+    coutsMensuels = coutsMensuels + loyer; // Total Charges Mensuelles
+    // L'investissement reste l'apport (souvent 0)
+  }
+
+  // Validation
+  if (trafic <= 0 || ventes <= 0 || panier <= 0) {
+    alert('Veuillez renseigner Trafic, Ventes et Panier avec des valeurs positives.');
+    return;
+  }
+
+  // 2. Logique Performance
+  const tauxConversion = ventes / trafic;
+  const caAvant = ventes * panier;
+
+  const multiplicateurTrafic = 1 + (tauxHausseInput / 100);
+  const traficApres = trafic * multiplicateurTrafic;
+  const ventesApres = traficApres * tauxConversion;
+  const panierApres = panier * 1.295; // Fixe +29.5%
+  const caApres = ventesApres * panierApres;
+
+  // 3. Logique Financière
+  const gainMensuel = caApres - caAvant;
+  const gainAnnuelCA = gainMensuel * 12;
+  const coutInaction = gainMensuel * 6;
+  const tresorerieNetteMensuelle = gainMensuel - coutsMensuels;
+  
+  const coutsAnnuels = coutsMensuels * 12;
+  const beneficeNetAn1 = gainAnnuelCA - coutsAnnuels - investissement;
+  const pourcentHausseCA = ((caApres - caAvant) / caAvant) * 100;
+
+  // Calcul ROI (Cas spécial Division par zéro)
+  let roiAn1 = 0;
+  let roiText = "";
+  if (investissement > 0) {
+    roiAn1 = (beneficeNetAn1 / investissement) * 100;
+    roiText = formatPourcent(roiAn1);
+  } else {
+    // Si investissement 0 => ROI Infini
+    roiAn1 = 999999; 
+    roiText = "Infini";
+  }
+
+  // 4. Affichage DOM
+  const setText = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+
+  // Comparatif
+  setText('trafic_avant', formatNumber(trafic) + ' visit.');
+  setText('ventes_avant', formatNumber(ventes) + ' ventes');
+  setText('panier_avant', formatEuro(panier));
+  setText('ca_avant', formatEuro(caAvant));
+
+  setText('trafic_apres', formatNumber(Math.round(traficApres)) + ' visit.');
+  setText('ventes_apres', formatNumber(Math.round(ventesApres)) + ' ventes');
+  setText('panier_apres', formatEuro(panierApres));
+  setText('ca_apres', formatEuro(caApres));
+
+  // Badges
+  setText('badge_trafic', '+' + tauxHausseInput + '%');
+  setText('badge_ventes', '+' + tauxHausseInput + '%');
+  setText('badge_ca', '+' + pourcentHausseCA.toFixed(1) + '%');
+
+  // Bannières Gain & Tréso
+  setText('gain_mensuel', formatEuro(gainMensuel));
+  setText('gain_annuel', formatEuro(gainAnnuelCA));
+  
+  const elTreso = document.getElementById('tresorerie_nette');
+  if (elTreso) {
+    elTreso.textContent = (tresorerieNetteMensuelle > 0 ? '+' : '') + formatEuro(tresorerieNetteMensuelle) + ' /mois';
+    elTreso.style.color = tresorerieNetteMensuelle >= 0 ? '#2a850e' : '#DE0B19';
+  }
+
+  // Cartes Finance
+  setText('res_invest', formatEuro(investissement));
+  setText('res_ca_1an', formatEuro(gainAnnuelCA));
+  
+  const elBenef = document.getElementById('res_benefice');
+  if(elBenef) {
+    elBenef.textContent = (beneficeNetAn1 > 0 ? '+' : '') + formatEuro(beneficeNetAn1);
+    elBenef.style.color = beneficeNetAn1 >= 0 ? '#DE0B19' : '#1A1A1A';
+  }
+
+  const elRoi = document.getElementById('res_roi');
+  if(elRoi) {
+    elRoi.textContent = roiText;
+    elRoi.style.color = '#DE0B19';
+  }
+
+  setText('cout_inaction', formatEuro(coutInaction));
+
+  // 5. Graphique & Affichage Final
+  updateChart(caAvant, caApres);
+  
+  const resultsSection = document.getElementById('results');
+  if (resultsSection) {
+    resultsSection.style.display = 'block';
+    setTimeout(() => resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+  }
+
+  // Transfert Données (Hidden Inputs)
+  const donnees = {
+    'trafic_visiteurs_mensuel': trafic,
+    'gain_mensuel_estime': Math.round(gainMensuel),
+    'roi_previsionnel_12_mois': (roiAn1 > 9999) ? 9999 : Math.round(roiAn1),
+    'budget_investissement_estime': investissement
+  };
+  for (const [key, val] of Object.entries(donnees)) {
+    const input = document.querySelector(`input[name="${key}"]`);
+    if(input) { input.value = val; input.dispatchEvent(new Event('change')); }
+  }
+}
+
+// === GRAPHIQUE ===
+function updateChart(caAvantMensuel, caApresMensuel) {
+  const canvas = document.getElementById('roiChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  const caAvantAn = caAvantMensuel * 12;
+  const caApresAn = caApresMensuel * 12;
+  const dataSans = [0, caAvantAn, caAvantAn * 2, caAvantAn * 3];
+  const dataAvec = [0, caApresAn, caApresAn * 2, caApresAn * 3];
+
+  if (roiChartInstance) roiChartInstance.destroy();
+
+  roiChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Départ', 'Année 1', 'Année 2', 'Année 3'],
+      datasets: [
+        {
+          label: 'Situation Actuelle',
+          data: dataSans,
+          borderColor: '#999', borderWidth: 2, borderDash: [5,5], pointRadius: 3
+        },
+        {
+          label: 'Avec Écran AKAIRO',
+          data: dataAvec,
+          borderColor: '#DE0B19', backgroundColor: 'rgba(222, 11, 25, 0.1)',
+          borderWidth: 3, pointRadius: 5, pointBackgroundColor: '#FFF', pointBorderColor: '#DE0B19',
+          fill: '-1', tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index', intersect: false } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => v >= 1000 ? (v/1000) + ' k€' : v + ' €' } } }
+    }
+  });
+}
+
+// Utilitaires
+function formatEuro(v) { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v); }
+function formatNumber(v) { return new Intl.NumberFormat('fr-FR').format(v); }
+function formatPourcent(v) { return (v >= 0 ? '+' : '') + v.toFixed(0) + '%'; }
